@@ -8,5 +8,6 @@ namespace StockService.Application.Interfaces
 {
 	public interface IStockService
 	{
+		Task DecreaseStockAsync(int productId, int quantity);
 	}
 }

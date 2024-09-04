@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using StockService.Application.Interfaces;
 
 namespace StockService.API.Controllers
 {
@@ -6,28 +7,46 @@ namespace StockService.API.Controllers
 	[Route("[controller]")]
 	public class StockController : ControllerBase
 	{
-		private static readonly string[] Summaries = new[]
-		{
-			"Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-		};
 
 		private readonly ILogger<StockController> _logger;
+		private readonly IStockService _stockService;
 
-		public StockController(ILogger<StockController> logger)
+		public StockController(ILogger<StockController> logger, IStockService stockService)
 		{
 			_logger = logger;
+			_stockService = stockService;
 		}
 
-		[HttpGet(Name = "GetWeatherForecast")]
-		public IEnumerable<WeatherForecast> Get()
+		[HttpPost("decrease")]
+		public async Task<IActionResult> DecreaseStock([FromBody] DecreaseStockRequest request)
 		{
-			return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+			try
 			{
-				Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-				TemperatureC = Random.Shared.Next(-20, 55),
-				Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-			})
-			.ToArray();
+				await _stockService.DecreaseStockAsync(request.ProductId, request.Quantity);
+				return Ok(new { Message = "Stock updated successfully" });
+			}
+			catch (ArgumentNullException ex)
+			{
+				return BadRequest(new { Message = ex.Message });
+			}
+			catch (ArgumentOutOfRangeException ex)
+			{
+				return BadRequest(new { Message = ex.Message });
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(new { Message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { Message = "An unexpected error occurred.", Details = ex.Message });
+			}
+		}
+
+		public class DecreaseStockRequest
+		{
+			public int ProductId { get; set; }
+			public int Quantity { get; set; }
 		}
 	}
 }

@@ -1,11 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StockService.Application.Interfaces;
 using StockService.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace StockService.Infrastructure.Data
 {
