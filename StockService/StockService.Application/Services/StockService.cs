@@ -32,6 +32,7 @@ namespace StockService.Application.Services
 
 			// Stok azaltma işlemi
 			stock.Quantity -= quantity;
+			stock.UpdatedDateUtc = DateTime.UtcNow;
 			await _stockRepository.UpdateAsync(stock);
 		}
 	}
