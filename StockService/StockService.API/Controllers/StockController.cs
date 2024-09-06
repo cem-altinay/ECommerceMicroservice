@@ -17,7 +17,7 @@ namespace StockService.API.Controllers
 			_stockService = stockService;
 		}
 
-		[HttpPost("decrease")]
+		[HttpPost("Decrease")]
 		public async Task<IActionResult> DecreaseStock([FromBody] DecreaseStockRequest request)
 		{
 			try
