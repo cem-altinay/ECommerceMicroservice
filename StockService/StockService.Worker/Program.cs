@@ -4,7 +4,13 @@ using Refit;
 using MassTransit;
 using StockService.Worker.Consumers;
 using StockService.Worker.Model;
+using Serilog;
+using ECommerce.Shared.Utilities.Loging.Serilog;
 
+
+Log.Logger = new LoggerConfiguration()
+	.UseElasticsearchLogger(applicationName: "ecommerce-stock-worker")
+	.CreateLogger();
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
@@ -58,5 +64,23 @@ builder.Services.AddMassTransit(x =>
 		});
 });
 
+builder.Logging.AddSerilog();
+
 var host = builder.Build();
-host.Run();
+
+
+try
+{
+	Log.Information("Uygulama baþlatýlýyor.");
+	host.Run();
+}
+catch (Exception ex)
+{
+	Log.Fatal(ex, "Uygulama baþlatýlamadý!");
+}
+finally
+{
+	Log.CloseAndFlush();
+}
+
+

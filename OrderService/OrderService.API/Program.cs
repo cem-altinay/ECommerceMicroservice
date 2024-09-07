@@ -1,8 +1,16 @@
+using ECommerce.Shared.Utilities.Loging.Serilog;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using OrderService.API.Model;
 using OrderService.Application.Interfaces;
 using OrderService.Infrastructure.Data;
+using Serilog;
+
+
+Log.Logger = new LoggerConfiguration()
+	.UseElasticsearchLogger(applicationName: "ecommerce-order-api")
+	.CreateLogger();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +45,8 @@ builder.Services.AddMassTransit(x =>
 	});
 });
 
+builder.Host.UseSerilog();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -58,4 +68,16 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+	Log.Information("Uygulama baþlatýlýyor.");
+	app.Run();
+}
+catch (Exception ex)
+{
+	Log.Fatal(ex, "Uygulama baþlatýlamadý!");
+}
+finally
+{
+	Log.CloseAndFlush();
+}

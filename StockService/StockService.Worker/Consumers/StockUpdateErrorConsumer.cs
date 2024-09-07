@@ -11,12 +11,18 @@ namespace StockService.Worker.Consumers
 {
 	public class StockUpdateErrorConsumer : IConsumer<StockUpdateMessageEvent>
 	{
+		private readonly ILogger<StockUpdateErrorConsumer> _logger;
+
+		public StockUpdateErrorConsumer(ILogger<StockUpdateErrorConsumer> logger)
+		{
+			_logger = logger;
+		}
+
 		public async Task Consume(ConsumeContext<StockUpdateMessageEvent> context)
 		{
 			//Gelen veriyi db yada ayrı bir noktada loglama işlemi yapılabilir.
-			Console.WriteLine($"Error processing stock update for Product ID: {context.Message.ProductId}. Message will be logged or further analyzed.");
+			_logger.LogError($"Error processing stock update for Product ID: {context.Message.ProductId}. Message will be logged or further analyzed.");
 
-		
 			var notificationEmailEvent = new NotificationEvent
 			{
 				Recipient = "admin@test.com",

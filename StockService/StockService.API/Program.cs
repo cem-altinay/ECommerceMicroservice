@@ -1,8 +1,14 @@
+using ECommerce.Shared.Utilities.Loging.Serilog;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using StockService.Application.Interfaces;
 using StockService.Infrastructure.Data;
+
+
+Log.Logger = new LoggerConfiguration()
+	.UseElasticsearchLogger(applicationName:"ecommerce-stock-api") 
+	.CreateLogger();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +24,9 @@ builder.Services.AddDbContext<StockContext>(options => options.UseNpgsql(builder
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IStockService, StockService.Application.Services.StockService>();
+
+
+builder.Host.UseSerilog();
 
 var app = builder.Build();
 
@@ -35,10 +44,26 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
+
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+
+try
+{
+	Log.Information("Uygulama baþlatýlýyor.");
+	app.Run();
+}
+catch (Exception ex)
+{
+	Log.Fatal(ex, "Uygulama baþlatýlamadý!");
+}
+finally
+{
+	Log.CloseAndFlush();
+}
+

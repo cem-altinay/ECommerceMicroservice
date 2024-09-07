@@ -1,8 +1,16 @@
+using ECommerce.Shared.Utilities.Loging.Serilog;
 using Microsoft.EntityFrameworkCore;
 using NotificationService.Application.Interfaces;
 using NotificationService.Infrastructure.Data;
 using NotificationService.Infrastructure.Email;
 using NotificationService.Infrastructure.Sms;
+using Serilog;
+
+
+
+Log.Logger = new LoggerConfiguration()
+	.UseElasticsearchLogger(applicationName: "ecommerce-notification-api")
+	.CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +28,9 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<INotificationService, NotificationService.Application.Services.NotificationService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<ISmsSender, SmsSender>();
+
+
+builder.Host.UseSerilog();
 
 var app = builder.Build();
 
@@ -42,4 +53,16 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+	Log.Information("Uygulama baþlatýlýyor.");
+	app.Run();
+}
+catch (Exception ex)
+{
+	Log.Fatal(ex, "Uygulama baþlatýlamadý!");
+}
+finally
+{
+	Log.CloseAndFlush();
+}
