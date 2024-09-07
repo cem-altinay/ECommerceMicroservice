@@ -1,4 +1,5 @@
 ﻿using OrderService.Domain.Entities;
+using OrderService.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace OrderService.Application.Interfaces
 {
 	public interface IOrderService
 	{
-		Task CreateOrderAsync(Order order);
+		Task CreateOrderAsync(OrderRequestDto orderRequest);
 	}
 }

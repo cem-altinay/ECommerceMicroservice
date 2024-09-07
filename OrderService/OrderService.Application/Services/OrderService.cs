@@ -1,8 +1,10 @@
 ﻿using Ardalis.GuardClauses;
 using ECommerce.Shared.Contracts;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
+using OrderService.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,12 +17,14 @@ namespace OrderService.Application.Services
 	{
 		private readonly IRepository<Order> _orderRepository;
 		private readonly IPublishEndpoint _publishEndpoint;
-		public OrderService(IRepository<Order> orderRepository, IPublishEndpoint publishEndpoint)
+		private readonly ILogger<OrderService> _logger;
+		public OrderService(IRepository<Order> orderRepository, IPublishEndpoint publishEndpoint, ILogger<OrderService> logger)
 		{
 			_orderRepository = orderRepository;
 			_publishEndpoint = publishEndpoint;
+			_logger = logger;
 		}
-		private void ValidateOrder(Order order)
+		private void ValidateOrder(OrderRequestDto order)
 		{
 			/*
 			  Bu aşamada api call yapıp çeşitli validasyonlar yapılabilir. Örneğin; Stok durumu kontrolü gibi.
@@ -38,46 +42,67 @@ namespace OrderService.Application.Services
 				Guard.Against.NegativeOrZero(item.UnitPrice, nameof(item.UnitPrice), "Product unit price must be greater than zero.");
 			}
 		}
-		public async Task CreateOrderAsync(Order order)
+		public async Task CreateOrderAsync(OrderRequestDto orderRequest)
 		{
 
-			ValidateOrder(order);
-
-			order.TotalPrice = order.OrderItems.Sum(item => item.UnitPrice);
-			Console.WriteLine($"Order created for {order.OrderItems.Count} items, Total Price: {order.TotalPrice}");
-
-			await _orderRepository.AddAsync(order);
-
-			// Stok güncelleme mesajları oluştur
-			foreach (var item in order.OrderItems)
+			try
 			{
-				var stockUpdateMessage = new StockUpdateMessageEvent
+				ValidateOrder(orderRequest);
+
+				var order = new Order
 				{
-					ProductId = item.Id,  
-					Quantity = item.Quantity
+					CustomerEmail = orderRequest.CustomerEmail,
+					OrderDate = DateTime.UtcNow,
+					OrderItems = orderRequest.OrderItems.Select(item => new OrderItem
+					{
+						ProductName = item.ProductName,
+						ProductId = item.ProductId,
+						Quantity = item.Quantity,
+						UnitPrice = item.UnitPrice
+					}).ToList()
 				};
 
-				await _publishEndpoint.Publish(stockUpdateMessage);
+				order.TotalPrice = order.OrderItems.Sum(item => item.UnitPrice);
+				Console.WriteLine($"Order created for {order.OrderItems.Count} items, Total Price: {order.TotalPrice}");
+				_logger.LogInformation($"Order created for {order.OrderItems.Count} items, Total Price: {order.TotalPrice}");
+
+				await _orderRepository.AddAsync(order);
+
+				// Stok güncelleme mesajları oluştur
+				foreach (var item in order.OrderItems)
+				{
+					var stockUpdateMessage = new StockUpdateMessageEvent
+					{
+						ProductId = item.ProductId,
+						Quantity = item.Quantity
+					};
+
+					await _publishEndpoint.Publish(stockUpdateMessage);
+				}
+
+				var notificationEmailEvent = new NotificationEvent
+				{
+					Recipient = order.CustomerEmail,
+					Message = $"Your order with {order.OrderItems.Count} items has been placed. Total Price: {order.TotalPrice}",
+					Type = NotificationType.Email
+				};
+
+				await _publishEndpoint.Publish(notificationEmailEvent);
+
+				var notificationSmsEvent = new NotificationEvent
+				{
+					Recipient = order.CustomerEmail,
+					Message = $"Your order with {order.OrderItems.Count} items has been placed. Total Price: {order.TotalPrice}",
+					Type = NotificationType.Sms
+				};
+
+				await _publishEndpoint.Publish(notificationSmsEvent);
 			}
-
-	
-			var notificationEmailEvent = new NotificationEvent
+			catch (Exception ex)
 			{
-				Recipient = order.CustomerEmail,
-				Message = $"Your order with {order.OrderItems.Count} items has been placed. Total Price: {order.TotalPrice}",
-				Type = NotificationType.Email
-			};
-
-			await _publishEndpoint.Publish(notificationEmailEvent);
-
-			var notificationSmsEvent = new NotificationEvent
-			{
-				Recipient = order.CustomerEmail,
-				Message = $"Your order with {order.OrderItems.Count} items has been placed. Total Price: {order.TotalPrice}",
-				Type = NotificationType.Sms
-			};
-
-			await _publishEndpoint.Publish(notificationSmsEvent);
+				_logger.LogError(ex, "An error occurred while creating the order.");
+				throw;
+			}
 		}
 	}
 

@@ -34,7 +34,7 @@ namespace OrderService.Infrastructure.Data
 
 		public async Task UpdateAsync(T entity)
 		{
-			_context.Entry(entity).State = EntityState.Modified;
+	
 
 			await _context.SaveChangesAsync();
 		}

@@ -22,7 +22,8 @@ namespace NotificationService.API.Controllers
 			{
 				Recipient = request.Recipient,
 				Message = request.Message,
-				Type = request.Type
+				Type = request.Type,
+				SentDate = DateTime.UtcNow
 			};
 
 			

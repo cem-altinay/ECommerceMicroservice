@@ -22,6 +22,7 @@ namespace StockService.API.Controllers
 		{
 			try
 			{
+			
 				await _stockService.DecreaseStockAsync(request.ProductId, request.Quantity);
 				return Ok(new { Message = "Stock updated successfully" });
 			}

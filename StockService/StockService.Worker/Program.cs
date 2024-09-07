@@ -50,14 +50,15 @@ builder.Services.AddMassTransit(x =>
 				e.ConfigureConsumer<StockUpdateConsumer>(context);
 
 				// 5 defa dene ve 10 saniye bekle
-				e.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10)));
+				//e.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(5))); //Poly kullanýldýðý için gerek kalmadý
 
 				// Hata kuyruðuna iletilmesi için gerekli ayarlar
 				e.UseInMemoryOutbox(context);
+
 			});
 
 			// Hata kuyruðu ayarlarý
-			cfg.ReceiveEndpoint("stock_update_error_queue", e =>
+			cfg.ReceiveEndpoint("stock_update_queue_error", e =>
 			{
 				e.ConfigureConsumer<StockUpdateErrorConsumer>(context);
 			});

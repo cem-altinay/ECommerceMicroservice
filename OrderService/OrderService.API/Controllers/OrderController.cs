@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
+using OrderService.Domain.Model;
 
 namespace OrderService.API.Controllers
 {
@@ -19,7 +20,7 @@ namespace OrderService.API.Controllers
 		}
 
 		[HttpPost("Create")]
-		public async Task<IActionResult> CreateOrder([FromBody] Order order)
+		public async Task<IActionResult> CreateOrder([FromBody] OrderRequestDto order)
 		{
 			try
 			{

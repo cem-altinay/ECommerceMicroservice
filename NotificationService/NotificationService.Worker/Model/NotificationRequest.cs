@@ -11,6 +11,6 @@ namespace NotificationService.Worker.Model
 	{
 		public string Recipient { get; set; }
 		public string Message { get; set; }
-		public NotificationType Type { get; set; }
+		public int Type { get; set; }
 	}
 }

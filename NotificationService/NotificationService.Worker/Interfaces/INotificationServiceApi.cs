@@ -12,6 +12,6 @@ namespace NotificationService.Worker.Interfaces
 	public interface INotificationServiceApi
 	{
 		[Post("/Notification/Send")]
-		Task DecreaseStockAsync([Body] NotificationRequest request);
+		Task NotificationSendAsync([Body] NotificationRequest request);
 	}
 }

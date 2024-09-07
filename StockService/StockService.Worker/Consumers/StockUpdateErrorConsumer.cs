@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace StockService.Worker.Consumers
 {
-	public class StockUpdateErrorConsumer : IConsumer<StockUpdateMessageEvent>
+	public class StockUpdateErrorConsumer : IConsumer<Fault<StockUpdateMessageEvent>>
 	{
 		private readonly ILogger<StockUpdateErrorConsumer> _logger;
 
@@ -18,16 +18,26 @@ namespace StockService.Worker.Consumers
 			_logger = logger;
 		}
 
-		public async Task Consume(ConsumeContext<StockUpdateMessageEvent> context)
+		public async Task Consume(ConsumeContext<Fault<StockUpdateMessageEvent>> context)
 		{
-			//Gelen veriyi db yada ayrı bir noktada loglama işlemi yapılabilir.
-			_logger.LogError($"Error processing stock update for Product ID: {context.Message.ProductId}. Message will be logged or further analyzed.");
+
+
+			var failedMessage = context.Message.Message;
+			var exceptionInfo = context.Message.Exceptions;
+
+
+			_logger.LogError($"Hata Alan Mesaj: ProductId={failedMessage.ProductId}, Quantity={failedMessage.Quantity}");
+
+			foreach (var exception in exceptionInfo)
+			{
+				Console.WriteLine($"Hata: {exception.Message}");
+			}
 
 			var notificationEmailEvent = new NotificationEvent
 			{
 				Recipient = "admin@test.com",
 				Type = NotificationType.Email,
-				Message = $"Failed to update stock for Product ID: {context.Message.ProductId}"
+				Message = $"Failed to update stock for Product ID: {failedMessage?.ProductId}"
 			};
 			await context.Publish(notificationEmailEvent);
 
@@ -35,7 +45,7 @@ namespace StockService.Worker.Consumers
 			{
 				Recipient = "admin@test.com",
 				Type = NotificationType.Sms,
-				Message = $"Failed to update stock for Product ID: {context.Message.ProductId}"
+				Message = $"Failed to update stock for Product ID: {failedMessage?.ProductId}"
 			};
 			await context.Publish(notificationSmsEvent);
 		}
